@@ -1,9 +1,14 @@
 # importing required dependencies
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import pickle
 from pydantic import BaseModel
 import numpy as np
+
+allowed_origins = [
+    "http://localhost:5173",
+]
 
 # defining the input data model for house price prediction
 class HousePricePredictionInput(BaseModel):
@@ -19,6 +24,14 @@ app = FastAPI(
     title="FastApi Template",
     description="A simple FastAPI template",
     version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # getting the pickle file's path
