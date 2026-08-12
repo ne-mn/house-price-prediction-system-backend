@@ -66,7 +66,7 @@ LOCATION_TYPE_FEATURES = [
 
 # forming the input row for the trained model
 def create_input_row(data: HousePricePredictionInput):
-    input_row = np.array(len(feature_columns)).zeros()
+    input_row = np.zeros(len(feature_columns))
     
     # for numerical features
     numerical_features = {
@@ -77,22 +77,33 @@ def create_input_row(data: HousePricePredictionInput):
     }
     
     for feature, value in numerical_features.items():
-        feature_index = feature_columns.index(feature)
-        input_row[feature_index] = value
+        try: 
+            feature_index = feature_columns.index(feature)
+            input_row[feature_index] = value
+        except ValueError:
+            pass
+               
     
     # for area type features    
-    if data.area_type not in AREA_TYPE_FEATURES:
-        return HTTPException(status_code=400, detail=f"Invalid area type: {data.area_type}. Valid options are: {AREA_TYPE_FEATURES}")
+    cleaned_area_type = data.area_type.strip().lower()
+    matched_area = next((col for col in feature_columns if col.strip().lower() == cleaned_area_type), None)
     
-    area_type_index = feature_columns.index(data.area_type) 
-    input_row[area_type_index] = 1          
+    if matched_area:
+        area_type_index = feature_columns.index(matched_area)
+        input_row[area_type_index] = 1
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid area type received: '{data.area_type}'")
+         
 
     # for location type features
-    if data.location not in LOCATION_TYPE_FEATURES:
-            return HTTPException(status_code=400, detail=f"Invalid location: {data.location}. Valid options are: {LOCATION_TYPE_FEATURES}")
+    cleaned_location = data.location.strip().lower()
+    matched_location = next((col for col in feature_columns if col.strip().lower() == cleaned_location), None)
 
-    location_type_index = feature_columns.index(data.location) 
-    input_row[location_type_index] = 1
+    if matched_location:
+        location_type_index = feature_columns.index(matched_location)
+        input_row[location_type_index] = 1
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid location received: '{data.location}'")
 
     return input_row
 
@@ -123,12 +134,13 @@ def read_options():
  
 @app.post("/predict") 
 def predict(data: HousePricePredictionInput):
+    print("Received Data", data)
     
     input_row = create_input_row(data)
     prediction_result = model.predict([input_row])[0]
     
     return{
-        "prediction": round(prediction_result, 2),
+        "predicted_price": round(prediction_result, 2),
            "input_data": {
                "total_sqft": data.total_sqft,
                "bath": data.bath,
@@ -137,7 +149,7 @@ def predict(data: HousePricePredictionInput):
                "area_type": data.area_type,
                "location": data.location
            }
-           }
+    }
            
    
           
