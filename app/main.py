@@ -1,4 +1,7 @@
 # importing required dependencies
+import os 
+from dotenv import load_dotenv
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -6,9 +9,9 @@ import pickle
 from pydantic import BaseModel
 import numpy as np
 
-allowed_origins = [
-    "http://localhost:5173",
-]
+load_dotenv()
+
+frontend_url = os.getenv("FRONTEND_URL")
 
 # defining the input data model for house price prediction
 class HousePricePredictionInput(BaseModel):
@@ -28,7 +31,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=[frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
